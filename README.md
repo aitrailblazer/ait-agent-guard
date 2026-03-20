@@ -24,6 +24,7 @@
   <a href="#why-agentguard">Why AgentGuard</a> ·
   <a href="#how-it-works">How It Works</a> ·
   <a href="#current-status">Current Status</a> ·
+  <a href="#testing">Testing</a> ·
   <a href="#roadmap">Roadmap</a> ·
   <a href="#security-notice">Security</a>
 </p>
@@ -285,23 +286,40 @@ Reason: recipient not allowed
 
 ## Testing
 
+Testing is documented in more detail in [`TESTING.md`](TESTING.md).
+
 Run the automated checks:
 
 ```bash
 npm test
 ```
 
-Current coverage is intentionally narrow and centered on the core policy engine:
+Run the suite in watch mode while iterating:
+
+```bash
+npm run test:watch
+```
+
+Current automated coverage is intentionally narrow and centered on the core policy engine:
 
 - allow path for a valid transaction
 - block path for a disallowed recipient
 - block path for an amount above the configured limit
+
+The current automated test file is [`test/guard.test.ts`](test/guard.test.ts).
 
 Type-only verification remains available separately:
 
 ```bash
 npm run typecheck
 ```
+
+Not covered yet:
+
+- CLI parsing and console output
+- policy file failure cases
+- audit log writes
+- real AgentPay execution
 
 ## Policy File
 
@@ -352,6 +370,7 @@ Full end-to-end execution requires a local AgentPay runtime installed and config
 | Path | Purpose |
 | --- | --- |
 | [`README.md`](README.md) | Public overview, architecture framing, and roadmap |
+| [`TESTING.md`](TESTING.md) | Test commands, current coverage, and next testing targets |
 | [`analysis/worldliberty-agentpay-sdk-analysis.md`](analysis/worldliberty-agentpay-sdk-analysis.md) | Technical analysis of AgentPay and the proposed integration posture |
 | [`agentguard_with_copyright.png`](agentguard_with_copyright.png) | Project hero artwork |
 
