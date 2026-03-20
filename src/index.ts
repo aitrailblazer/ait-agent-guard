@@ -130,7 +130,10 @@ async function main(): Promise<void> {
 
         console.log('⏳ PENDING APPROVAL');
         console.log(`TxID: ${approval.txId}`);
-        if (!approval.notified) {
+        if (approval.notified) {
+          console.log('Review in Slack or approve from the CLI.');
+          console.log(`CLI fallback: npm run approve -- ${approval.txId}`);
+        } else {
           console.log('Slack notification was not delivered.');
           if (approval.notificationError) {
             console.log(`Reason: ${approval.notificationError}`);

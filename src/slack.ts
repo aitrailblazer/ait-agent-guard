@@ -53,12 +53,44 @@ export async function sendApprovalRequest(approval: PendingApproval): Promise<bo
             `*Network:* ${approval.network}`,
             `*Reason:* ${approval.reason}`,
             `*Status:* ${approval.status}`,
-            '',
-            `Run: \`npm run approve -- ${approval.txId}\``,
           ].join('\n'),
           type: 'mrkdwn',
         },
         type: 'section',
+      },
+      {
+        elements: [
+          {
+            action_id: 'approve_tx',
+            style: 'primary',
+            text: {
+              text: 'Approve',
+              type: 'plain_text',
+            },
+            type: 'button',
+            value: approval.txId,
+          },
+          {
+            action_id: 'reject_tx',
+            style: 'danger',
+            text: {
+              text: 'Reject',
+              type: 'plain_text',
+            },
+            type: 'button',
+            value: approval.txId,
+          },
+        ],
+        type: 'actions',
+      },
+      {
+        elements: [
+          {
+            text: `Fallback CLI: \`npm run approve -- ${approval.txId}\``,
+            type: 'mrkdwn',
+          },
+        ],
+        type: 'context',
       },
     ],
     text: `AgentGuard approval required for ${approval.txId}`,

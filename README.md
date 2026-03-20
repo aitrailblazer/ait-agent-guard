@@ -190,6 +190,10 @@ What exists today:
 - analysis of the AgentPay SDK and trust boundaries
 - a clear integration thesis for a pre-execution control layer
 - a runnable MVP CLI with mocked AgentPay execution
+- a persistent pending-approval queue for approval-eligible blocks
+- Slack approval routing with Approve and Reject buttons
+- Slack signature verification on interactive approval actions
+- persistent transaction records for pending, approved, and rejected flows
 - an initial roadmap for the next iteration
 
 What does not exist yet:
@@ -237,6 +241,31 @@ Expected result:
 
 ```text
 ❌ BLOCKED: DENIED: recipient not allowed
+```
+
+For API-driven approval flow:
+
+```bash
+npm run api
+```
+
+For Slack approval flow, create a local `.env` from `.env.example` and set both:
+
+```bash
+SLACK_WEBHOOK_URL=...
+SLACK_SIGNING_SECRET=...
+```
+
+When an approval-eligible transaction is blocked, AgentGuard persists the request and can route it into Slack with Approve and Reject buttons through `POST /slack/actions`. The CLI fallback remains:
+
+```bash
+npm run approve -- <tx-id>
+```
+
+You can inspect durable approval state over HTTP:
+
+```bash
+curl http://localhost:3000/transactions
 ```
 
 ## How to Test

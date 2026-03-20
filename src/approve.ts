@@ -1,38 +1,10 @@
-import { executeAgentPayTransfer } from './agentpay.ts';
-import { logDecision } from './logging.ts';
-import { getPendingApproval, removePendingApproval } from './store.ts';
+import { approvePendingApproval } from './approval.ts';
 
 export function approvePendingTransaction(txId: string): {
   mode: 'mock' | 'real';
   raw: string;
 } {
-  const approval = getPendingApproval(txId);
-
-  if (!approval) {
-    throw new Error('Transaction not found');
-  }
-
-  const result = executeAgentPayTransfer(
-    approval.to,
-    approval.amountWei,
-    approval.network,
-  );
-
-  if (!result.success) {
-    throw new Error(result.error);
-  }
-
-  removePendingApproval(txId);
-  logDecision({
-    action: 'approve-cli',
-    amountWei: approval.amountWei,
-    approvalTxId: approval.txId,
-    configuredExecutionMode: result.mode,
-    decision: 'APPROVED',
-    reason: approval.reason,
-    recipient: approval.to,
-    timestamp: new Date().toISOString(),
-  });
+  const result = approvePendingApproval(txId, 'approve-cli');
 
   return {
     mode: result.mode,

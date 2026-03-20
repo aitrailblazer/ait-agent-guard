@@ -10,14 +10,16 @@ export type DecisionAction =
   | 'api-execute'
   | 'approval-request-api'
   | 'approval-request-cli'
-  | 'approve-cli';
+  | 'approve-cli'
+  | 'approve-slack'
+  | 'reject-slack';
 
 export interface DecisionLogEntry {
   action: DecisionAction;
   amountWei: string;
   approvalTxId?: string;
   configuredExecutionMode: 'auto' | 'mock' | 'real';
-  decision: GuardDecision['status'] | 'PENDING_APPROVAL' | 'APPROVED';
+  decision: GuardDecision['status'] | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
   reason?: string;
   recipient: string;
   timestamp: string;

@@ -18,15 +18,25 @@ npm run typecheck
 
 ## Current Coverage
 
-The current automated suite lives in `test/guard.test.ts`.
+The current automated suite lives in:
+
+- `test/guard.test.ts`
+- `test/approve.test.ts`
+- `test/server.test.ts`
+- `test/slack-actions.test.ts`
 
 It verifies:
 
 - valid transactions are allowed
 - disallowed recipients are blocked
 - transactions exceeding limits are blocked
+- pending approvals can be approved from the CLI
+- approval-eligible API requests are persisted as pending approvals
+- Slack Approve and Reject actions resolve pending approvals correctly
+- invalid Slack signatures are rejected before approval actions run
+- durable transaction records are exposed through `GET /transactions`
 
-These tests exercise the core policy engine in `src/guard.ts`.
+These tests exercise the core policy engine in `src/guard.ts`, the approval path in `src/approval.ts`, and the HTTP surfaces in `src/server.ts`.
 
 ## Policy + Logging Coverage
 

@@ -7,7 +7,10 @@ export function loadRuntimeEnv(): void {
 
   didLoadRuntimeEnv = true;
 
-  if (process.env.SLACK_WEBHOOK_URL !== undefined) {
+  if (
+    process.env.SLACK_WEBHOOK_URL !== undefined &&
+    process.env.SLACK_SIGNING_SECRET !== undefined
+  ) {
     return;
   }
 

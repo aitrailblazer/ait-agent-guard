@@ -9,6 +9,7 @@ import { createApp } from '../src/server.ts';
 import {
   clearPendingApprovals,
   getPendingApproval,
+  getTransactionRecord,
 } from '../src/store.ts';
 
 describe('AgentGuard HTTP API', () => {
@@ -23,6 +24,7 @@ describe('AgentGuard HTTP API', () => {
     );
     process.env.AGENTGUARD_STATE_DIR = stateDir;
     process.env.SLACK_WEBHOOK_URL = '';
+    process.env.SLACK_SIGNING_SECRET = 'test-signing-secret';
     clearPendingApprovals();
     server = createApp().listen(0);
 
@@ -48,6 +50,7 @@ describe('AgentGuard HTTP API', () => {
     clearPendingApprovals();
     rmSync(stateDir, { force: true, recursive: true });
     delete process.env.AGENTGUARD_STATE_DIR;
+    delete process.env.SLACK_SIGNING_SECRET;
   });
 
   it('blocks a disallowed recipient on /validate', async () => {
@@ -124,5 +127,39 @@ describe('AgentGuard HTTP API', () => {
       to: '0x9999999999999999999999999999999999999999',
       txId: body.txId,
     });
+    expect(getTransactionRecord(body.txId)).toMatchObject({
+      amountWei: '100000000000000',
+      reason: 'recipient not allowed',
+      source: 'api',
+      status: 'PENDING',
+      to: '0x9999999999999999999999999999999999999999',
+      txId: body.txId,
+    });
+  });
+
+  it('lists persisted transactions on /transactions', async () => {
+    const pendingResponse = await fetch(`${baseUrl}/execute`, {
+      body: JSON.stringify({
+        amountWei: '100000000000000',
+        to: '0x9999999999999999999999999999999999999999',
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    });
+
+    expect(pendingResponse.status).toBe(202);
+    const pendingBody = (await pendingResponse.json()) as { txId: string };
+
+    const response = await fetch(`${baseUrl}/transactions`);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toContainEqual(
+      expect.objectContaining({
+        status: 'PENDING',
+        txId: pendingBody.txId,
+      }),
+    );
   });
 });
