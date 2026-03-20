@@ -7,7 +7,7 @@ export type DecisionAction = 'execute' | 'dry-run' | 'explain';
 export interface DecisionLogEntry {
   action: DecisionAction;
   amountWei: string;
-  configuredExecutionMode: 'mock' | 'real';
+  configuredExecutionMode: 'auto' | 'mock' | 'real';
   decision: GuardDecision['status'];
   reason?: string;
   recipient: string;

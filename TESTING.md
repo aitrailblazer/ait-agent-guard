@@ -26,15 +26,21 @@ npm run typecheck
 
 ## Current Coverage
 
-The current automated suite lives in [`test/guard.test.ts`](test/guard.test.ts).
+The current automated suite lives in:
+
+- [`test/guard.test.ts`](test/guard.test.ts)
+- [`test/agentpay.test.ts`](test/agentpay.test.ts)
 
 It verifies:
 
 - a valid transaction is allowed
 - a recipient outside the allowlist is blocked
 - an amount above `maxPerTxWei` is blocked
+- AgentGuard falls back to mock mode when `agentpay` is unavailable
+- AgentGuard attempts the real CLI when `agentpay` is available
+- AgentGuard returns a structured failure when the real CLI exits with stderr
 
-These tests exercise the structured decision surface returned by [`src/guard.ts`](src/guard.ts), which is the core logic behind the CLI.
+These tests exercise the structured decision surface in [`src/guard.ts`](src/guard.ts) and the execution-selection logic in [`src/agentpay.ts`](src/agentpay.ts).
 
 ## What Is Not Covered Yet
 
@@ -43,7 +49,7 @@ The current suite does not yet cover:
 - CLI argument parsing in [`src/index.ts`](src/index.ts)
 - policy file loading from [`policy.json`](policy.json)
 - audit log writes in [`src/logging.ts`](src/logging.ts)
-- real AgentPay execution in [`src/agentpay.ts`](src/agentpay.ts)
+- live AgentPay execution against an installed local runtime
 
 That is intentional for now. The highest-value risk in this repo is the correctness of the policy decision, so that is where the first automated tests are concentrated.
 

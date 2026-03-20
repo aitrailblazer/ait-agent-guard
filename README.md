@@ -193,7 +193,7 @@ What exists today:
 - a runnable MVP CLI with config-driven policy evaluation
 - structured allow or deny decisions with explain mode
 - local decision logging in `logs/decisions.log`
-- direct AgentPay CLI execution for approved transfers
+- automatic AgentPay detection with real execution or safe mock fallback
 - an initial roadmap for the next iteration
 
 What does not exist yet:
@@ -226,25 +226,34 @@ Review or update the local [`policy.json`](policy.json) file:
 }
 ```
 
-Verify that AgentPay is installed locally:
-
-```bash
-agentpay --help
-```
-
-If you have not initialized it yet, complete local setup:
-
-```bash
-agentpay admin setup
-```
-
 Run an allowed transfer:
 
 ```bash
 npm run start -- 0x1111111111111111111111111111111111111111 100000000000000
 ```
 
-Expected flow on a configured machine:
+If AgentPay is not installed locally, AgentGuard falls back automatically:
+
+```text
+✅ ALLOWED by AgentGuard
+⚠️ AgentPay not found — falling back to MOCK mode
+🚀 Executed via AgentPay:
+{
+  "amountWei": "100000000000000",
+  "mode": "mock",
+  "network": "11155111",
+  "to": "0x1111111111111111111111111111111111111111"
+}
+```
+
+If AgentPay is installed and configured locally, the same command delegates to the real CLI:
+
+```bash
+agentpay --help
+agentpay admin setup
+```
+
+Expected real-execution flow:
 
 ```text
 ✅ ALLOWED by AgentGuard
@@ -317,8 +326,13 @@ Current automated coverage is intentionally narrow and centered on the core poli
 - allow path for a valid transaction
 - block path for a disallowed recipient
 - block path for an amount above the configured limit
+- auto-fallback to mock mode when AgentPay is unavailable
+- real execution handoff when the AgentPay binary is present
 
-The current automated test file is [`test/guard.test.ts`](test/guard.test.ts).
+The current automated test files are:
+
+- [`test/guard.test.ts`](test/guard.test.ts)
+- [`test/agentpay.test.ts`](test/agentpay.test.ts)
 
 Type-only verification remains available separately:
 
@@ -331,7 +345,7 @@ Not covered yet:
 - CLI parsing and console output
 - policy file failure cases
 - audit log writes
-- real AgentPay execution
+- live AgentPay execution against an installed local runtime
 
 ## Policy File
 
@@ -356,23 +370,21 @@ That gives the prototype a local audit trail for:
 - execution intent
 - deny reason when applicable
 
-## Real Execution
+## Execution Modes
 
-AgentGuard now calls the local AgentPay CLI directly for approved transfers.
+AgentGuard automatically detects AgentPay:
 
-Requirements:
+- If installed, approved transfers are delegated to the real AgentPay CLI.
+- If not installed, AgentGuard falls back to mock mode for safe testing.
+- No setup is required to try the system end to end.
 
-- AgentPay installed locally
-- wallet configured through `agentpay admin setup`
-- a network and policy configuration that matches your intended environment
+To enable real execution locally:
 
-Example:
+- install AgentPay
+- configure a wallet with `agentpay admin setup`
+- use a network and policy configuration that matches your environment
 
-```bash
-npm run start -- 0x1111111111111111111111111111111111111111 100000000000000
-```
-
-If AgentPay is missing or not configured correctly, AgentGuard will fail at the execution boundary after a transaction is allowed by policy.
+If AgentPay is installed but misconfigured, execution can still fail after a transaction is allowed by policy.
 
 ## Repository Map
 
