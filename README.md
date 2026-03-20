@@ -283,6 +283,26 @@ Decision: BLOCKED
 Reason: recipient not allowed
 ```
 
+## Testing
+
+Run the automated checks:
+
+```bash
+npm test
+```
+
+Current coverage is intentionally narrow and centered on the core policy engine:
+
+- allow path for a valid transaction
+- block path for a disallowed recipient
+- block path for an amount above the configured limit
+
+Type-only verification remains available separately:
+
+```bash
+npm run typecheck
+```
+
 ## Policy File
 
 AgentGuard loads runtime policy from [`policy.json`](policy.json).
