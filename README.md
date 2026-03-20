@@ -268,6 +268,14 @@ You can inspect durable approval state over HTTP:
 curl http://localhost:3000/transactions
 ```
 
+If you want AgentGuard state to live outside the repo, set `AGENTGUARD_STATE_DIR` before starting the API. Absolute paths are supported:
+
+```bash
+AGENTGUARD_STATE_DIR=/Volumes/BIGDATA/agentguard-state/ait-agent-guard npm run api
+```
+
+This is useful if your primary data volume is tight on free space and you want the pending queue and transaction ledger on another disk.
+
 ## How to Test
 
 ### 1) Verify install

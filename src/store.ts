@@ -1,5 +1,5 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
 interface ApprovalRecordBase {
   amountWei: string;
@@ -85,7 +85,7 @@ function writeTransactionsFile(transactions: TransactionRecord[]): void {
 }
 
 function getPendingStateDirectoryPath(): string {
-  return join(process.cwd(), process.env.AGENTGUARD_STATE_DIR ?? '.agentguard-state');
+  return resolve(process.cwd(), process.env.AGENTGUARD_STATE_DIR ?? '.agentguard-state');
 }
 
 function getPendingStateFilePath(): string {
