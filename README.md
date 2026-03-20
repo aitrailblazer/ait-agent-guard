@@ -189,18 +189,75 @@ What exists today:
 - product framing and architecture
 - analysis of the AgentPay SDK and trust boundaries
 - a clear integration thesis for a pre-execution control layer
-- an initial roadmap for MVP scope
+- a runnable MVP CLI with mocked AgentPay execution
+- an initial roadmap for the next iteration
 
 What does not exist yet:
 
-- a production-ready CLI wrapper
-- a completed AgentPay integration
+- a production-ready policy engine
+- a completed live AgentPay integration
 - audited release artifacts
-- a full policy engine implementation
+- a full approval and orchestration layer
 
 If you are here early, this is the right way to read the repo:
 
 **The concept is real. The architecture is serious. The implementation is still early.**
+
+## Quick Start
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the MVP in mock mode:
+
+```bash
+npm run start -- 0x1111111111111111111111111111111111111111 100000000000000
+```
+
+Expected flow:
+
+```text
+✅ ALLOWED by AgentGuard
+[AgentPay MOCK]
+🚀 Executed via AgentPay:
+mock-tx-hash-0x123
+```
+
+Blocked example:
+
+```bash
+npm run start -- 0x9999999999999999999999999999999999999999 100000000000000
+```
+
+Expected result:
+
+```text
+❌ BLOCKED: DENIED: recipient not allowed
+```
+
+## Current Execution Mode
+
+AgentGuard currently runs with a mocked AgentPay execution layer for development.
+
+That means the control loop is real:
+
+- input
+- validation
+- allow or deny decision
+- execution handoff
+
+But the final transaction call is still simulated by default.
+
+To switch to the real AgentPay path later:
+
+```bash
+AGENTGUARD_USE_MOCK=false npm run start -- 0x1111111111111111111111111111111111111111 100000000000000
+```
+
+Full end-to-end execution requires a local AgentPay runtime installed and configured on the machine.
 
 ## Repository Map
 
