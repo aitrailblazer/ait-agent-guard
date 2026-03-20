@@ -1,24 +1,16 @@
 # Testing
 
-AgentGuard currently keeps testing intentionally narrow and focused on the control decision path.
-
-The goal at this stage is not broad coverage. The goal is deterministic proof that the core policy engine behaves predictably for the main allow and deny cases.
+AgentGuard keeps testing intentionally focused on the core control layer: policy validation and decision logging.
 
 ## Commands
 
-Run the automated test suite once:
+Run the automated test suite:
 
 ```bash
 npm test
 ```
 
-Run the test suite in watch mode while iterating:
-
-```bash
-npm run test:watch
-```
-
-Run TypeScript verification separately:
+Run TypeScript checks:
 
 ```bash
 npm run typecheck
@@ -26,51 +18,54 @@ npm run typecheck
 
 ## Current Coverage
 
-The current automated suite lives in:
-
-- [`test/guard.test.ts`](test/guard.test.ts)
-- [`test/agentpay.test.ts`](test/agentpay.test.ts)
-- [`test/server.test.ts`](test/server.test.ts)
+The current automated suite lives in `test/guard.test.ts`.
 
 It verifies:
 
-- a valid transaction is allowed
-- a recipient outside the allowlist is blocked
-- an amount above `maxPerTxWei` is blocked
-- AgentGuard falls back to mock mode when `agentpay` is unavailable
-- AgentGuard attempts the real CLI when `agentpay` is available
-- AgentGuard returns a structured failure when the real CLI exits with stderr
-- `/validate` blocks disallowed recipients over HTTP
-- `/validate-and-execute` runs through the fallback path over HTTP
+- valid transactions are allowed
+- disallowed recipients are blocked
+- transactions exceeding limits are blocked
 
-These tests exercise the structured decision surface in [`src/guard.ts`](src/guard.ts), the execution-selection logic in [`src/agentpay.ts`](src/agentpay.ts), and the HTTP service surface in [`src/server.ts`](src/server.ts).
+These tests exercise the core policy engine in `src/guard.ts`.
+
+## Policy + Logging Coverage
+
+AgentGuard also validates configuration loading and audit logging.
+
+Coverage includes:
+
+- loading `policy.json` and applying limits/allowlists
+- handling malformed or missing `policy.json`
+- writing one structured audit record per decision to `logs/decisions.log`
+
+Expected behavior:
+
+- valid config → transaction evaluated normally
+- missing/invalid config → safe failure (no execution)
+- every ALLOWED / BLOCKED decision → one log entry
 
 ## What Is Not Covered Yet
 
-The current suite does not yet cover:
+- CLI argument parsing in `src/index.ts`
+- real AgentPay execution in `src/agentpay.ts`
 
-- CLI argument parsing in [`src/index.ts`](src/index.ts)
-- policy file loading from [`policy.json`](policy.json)
-- audit log writes in [`src/logging.ts`](src/logging.ts)
-- live AgentPay execution against an installed local runtime
-
-That is intentional for now. The highest-value risk in this repo is the correctness of the policy decision, so that is where the first automated tests are concentrated.
+Policy loading and logging are covered at a basic level; deeper edge-case and integration testing can be added incrementally.
 
 ## How To Extend The Suite
 
-The next useful additions would be:
+Next useful additions:
 
 1. CLI tests for `--dry-run` and `--explain`
-2. policy-loading tests for malformed or missing `policy.json`
-3. logging tests that verify one JSON record is written per decision
-4. integration tests for the real AgentPay path once `agentpay` is installed locally
+2. advanced policy-loading tests (edge cases, partial configs, overrides)
+3. structured logging tests (schema validation, rotation, failure handling)
+4. integration tests for real AgentPay execution once installed locally
 
 ## Test Philosophy
 
-This project is a control layer, not a UI-first app.
+AgentGuard is a control layer, not a UI-first application.
 
-That means the most important test question is:
+The most important question is:
 
-**Does AgentGuard make the right decision for a proposed transaction?**
+**Does AgentGuard make the correct decision before any transaction is signed?**
 
-Everything else matters after that.
+Everything else builds on that guarantee.

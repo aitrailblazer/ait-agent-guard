@@ -24,8 +24,6 @@
   <a href="#why-agentguard">Why AgentGuard</a> ·
   <a href="#how-it-works">How It Works</a> ·
   <a href="#current-status">Current Status</a> ·
-  <a href="#api-mode">API Mode</a> ·
-  <a href="#testing">Testing</a> ·
   <a href="#roadmap">Roadmap</a> ·
   <a href="#security-notice">Security</a>
 </p>
@@ -191,25 +189,20 @@ What exists today:
 - product framing and architecture
 - analysis of the AgentPay SDK and trust boundaries
 - a clear integration thesis for a pre-execution control layer
-- a runnable MVP CLI with config-driven policy evaluation
-- a minimal HTTP API for validation and execution
-- structured allow or deny decisions with explain mode
-- local decision logging in `logs/decisions.log`
-- automatic AgentPay detection with real execution or safe mock fallback
-- Slack approval requests for approval-eligible blocks
-- an in-memory pending approval store for follow-up actions
+- a runnable MVP CLI with mocked AgentPay execution
 - an initial roadmap for the next iteration
 
 What does not exist yet:
 
 - a production-ready policy engine
-- a verified local AgentPay runtime on every development machine
+- a completed live AgentPay integration
 - audited release artifacts
 - a full approval and orchestration layer
 
 If you are here early, this is the right way to read the repo:
 
 **The concept is real. The architecture is serious. The implementation is still early.**
+
 
 ## Quick Start
 
@@ -219,65 +212,19 @@ Install dependencies:
 npm install
 ```
 
-Review or update the local [`policy.json`](policy.json) file:
-
-```json
-{
-  "maxPerTxWei": "100000000000000",
-  "allowedRecipients": [
-    "0x1111111111111111111111111111111111111111"
-  ]
-}
-```
-
-Optional: configure Slack approval routing in a local `.env` file:
-
-```bash
-cp .env.example .env
-```
-
-Then set:
-
-```bash
-SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
-```
-
-Pending approval state is stored locally in `.agentguard-state/pending-approvals.json`.
-
-Run an allowed transfer:
+Run the MVP in mock mode:
 
 ```bash
 npm run start -- 0x1111111111111111111111111111111111111111 100000000000000
 ```
 
-If AgentPay is not installed locally, AgentGuard falls back automatically:
+Expected flow:
 
 ```text
 ✅ ALLOWED by AgentGuard
-⚠️ AgentPay not found — falling back to MOCK mode
+[AgentPay MOCK]
 🚀 Executed via AgentPay:
-{
-  "amountWei": "100000000000000",
-  "mode": "mock",
-  "network": "11155111",
-  "to": "0x1111111111111111111111111111111111111111"
-}
-```
-
-If AgentPay is installed and configured locally, the same command delegates to the real CLI:
-
-```bash
-agentpay --help
-agentpay admin setup
-```
-
-Expected real-execution flow:
-
-```text
-✅ ALLOWED by AgentGuard
-⚡ Running: 'agentpay' 'transfer-native' '--network' '11155111' '--to' '0x1111111111111111111111111111111111111111' '--amount-wei' '100000000000000'
-🚀 Executed via AgentPay:
-<AgentPay CLI output>
+mock-tx-hash-0x123
 ```
 
 Blocked example:
@@ -289,253 +236,91 @@ npm run start -- 0x9999999999999999999999999999999999999999 100000000000000
 Expected result:
 
 ```text
-⏳ PENDING APPROVAL
-TxID: <generated-uuid>
+❌ BLOCKED: DENIED: recipient not allowed
 ```
 
-Dry-run an allowed request without delegating execution:
+## How to Test
+
+### 1) Verify install
 
 ```bash
-npm run start -- --dry-run 0x1111111111111111111111111111111111111111 100000000000000
+node -v
+npm -v
 ```
 
-Expected result:
+### 2) Install dependencies
+
+```bash
+npm install
+```
+
+### 3) Run (mock mode)
+
+```bash
+npm run start -- 0x1111111111111111111111111111111111111111 100000000000000
+```
+
+Expected output:
 
 ```text
 ✅ ALLOWED by AgentGuard
-🧪 DRY RUN: skipping AgentPay execution
+[AgentPay MOCK]
+🚀 Executed via AgentPay:
+mock-tx-hash-0x123
 ```
 
-Explain the policy outcome:
+### 4) Test a blocked transaction
 
 ```bash
-npm run start -- --explain 0x9999999999999999999999999999999999999999 100000000000000
+npm run start -- 0x9999999999999999999999999999999999999999 100000000000000
 ```
 
-Expected result:
+Expected output:
 
 ```text
-Policy evaluation:
-✔ Amount is positive: 100000000000000 wei is greater than zero
-✔ Recipient is a valid EVM address: 0x9999999999999999999999999999999999999999 matches the expected EVM address format
-✔ Amount is within maxPerTxWei: 100000000000000 wei is within the policy limit of 100000000000000 wei
-✖ Recipient is allowlisted: 0x9999999999999999999999999999999999999999 is not present in policy.allowedRecipients
-Decision: BLOCKED
-Reason: recipient not allowed
+❌ BLOCKED: DENIED: recipient not allowed
 ```
 
-## API Mode
-
-Start the API server:
+### 5) Toggle real AgentPay (optional)
 
 ```bash
-npm run api
+AGENTGUARD_USE_MOCK=false npm run start -- 0x1111111111111111111111111111111111111111 100000000000000
 ```
 
-The server listens on `http://localhost:3000` by default and supports:
+> Requires a local AgentPay runtime (`agentpay admin setup`) and proper network configuration.
 
-- `POST /validate`
-- `POST /execute`
-- `POST /validate-and-execute`
+### 6) What this validates
 
-Validate a request without executing it:
+- Pre-execution validation runs before any signing path
+- Allowed transactions are delegated to the execution layer
+- Blocked transactions never reach AgentPay
+
+## Current Execution Mode
+
+AgentGuard currently runs with a mocked AgentPay execution layer for development.
+
+That means the control loop is real:
+
+- input
+- validation
+- allow or deny decision
+- execution handoff
+
+But the final transaction call is still simulated by default.
+
+To switch to the real AgentPay path later:
 
 ```bash
-curl -X POST http://localhost:3000/validate \
-  -H "Content-Type: application/json" \
-  -d '{
-    "to": "0x1111111111111111111111111111111111111111",
-    "amountWei": "100000000000000"
-  }'
+AGENTGUARD_USE_MOCK=false npm run start -- 0x1111111111111111111111111111111111111111 100000000000000
 ```
 
-Execute through the same policy gate:
-
-```bash
-curl -X POST http://localhost:3000/validate-and-execute \
-  -H "Content-Type: application/json" \
-  -d '{
-    "to": "0x1111111111111111111111111111111111111111",
-    "amountWei": "100000000000000"
-  }'
-```
-
-Expected responses:
-
-- Allowed validation:
-
-```json
-{
-  "status": "ALLOWED",
-  "checks": [
-    {
-      "label": "Amount is positive",
-      "ok": true
-    },
-    {
-      "label": "Recipient is a valid EVM address",
-      "ok": true
-    },
-    {
-      "label": "Amount is within maxPerTxWei",
-      "ok": true
-    },
-    {
-      "label": "Recipient is allowlisted",
-      "ok": true
-    }
-  ]
-}
-```
-
-- Blocked validation:
-
-```json
-{
-  "status": "BLOCKED",
-  "reason": "recipient not allowed"
-}
-```
-
-- Approval-required execution:
-
-```json
-{
-  "status": "PENDING_APPROVAL",
-  "reason": "recipient not allowed",
-  "txId": "<generated-uuid>",
-  "notified": false
-}
-```
-
-- Mock fallback execution:
-
-```json
-{
-  "status": "EXECUTED",
-  "mode": "mock",
-  "result": "{\n  \"amountWei\": \"100000000000000\",\n  \"mode\": \"mock\",\n  \"network\": \"11155111\",\n  \"to\": \"0x1111111111111111111111111111111111111111\"\n}"
-}
-```
-
-## Testing
-
-Testing is documented in more detail in [`TESTING.md`](TESTING.md).
-
-Run the automated checks:
-
-```bash
-npm test
-```
-
-Run the suite in watch mode while iterating:
-
-```bash
-npm run test:watch
-```
-
-Current automated coverage is intentionally narrow and centered on the core policy engine:
-
-- allow path for a valid transaction
-- block path for a disallowed recipient
-- block path for an amount above the configured limit
-- auto-fallback to mock mode when AgentPay is unavailable
-- real execution handoff when the AgentPay binary is present
-- HTTP validation blocks disallowed recipients
-- HTTP execution works through the fallback path
-- HTTP execution creates a pending approval for approval-eligible blocks
-
-The current automated test files are:
-
-- [`test/guard.test.ts`](test/guard.test.ts)
-- [`test/agentpay.test.ts`](test/agentpay.test.ts)
-- [`test/server.test.ts`](test/server.test.ts)
-
-Type-only verification remains available separately:
-
-```bash
-npm run typecheck
-```
-
-Not covered yet:
-
-- CLI parsing and console output
-- policy file failure cases
-- audit log writes
-- live AgentPay execution against an installed local runtime
-
-## Policy File
-
-AgentGuard loads runtime policy from [`policy.json`](policy.json).
-
-The current MVP supports:
-
-- `maxPerTxWei`
-- `allowedRecipients`
-
-That keeps the CLI small while making the decision layer config-driven instead of hardcoded.
-
-## Audit Log
-
-Every allow or block decision is appended to `logs/decisions.log` as one JSON record per line.
-
-That gives the prototype a local audit trail for:
-
-- decision status
-- recipient
-- amount
-- execution intent
-- deny reason when applicable
-
-## Execution Modes
-
-AgentGuard automatically detects AgentPay:
-
-- If installed, approved transfers are delegated to the real AgentPay CLI.
-- If not installed, AgentGuard falls back to mock mode for safe testing.
-- No setup is required to try the system end to end.
-
-To enable real execution locally:
-
-- install AgentPay
-- configure a wallet with `agentpay admin setup`
-- use a network and policy configuration that matches your environment
-
-If AgentPay is installed but misconfigured, execution can still fail after a transaction is allowed by policy.
-
-## Slack Approvals
-
-AgentGuard can escalate approval-eligible policy blocks into pending human review instead of stopping at a hard deny.
-
-The current approval-eligible reasons are:
-
-- `amount exceeds limit`
-- `recipient not allowed`
-
-If `SLACK_WEBHOOK_URL` is configured, AgentGuard sends a Slack approval request that includes:
-
-- transaction ID
-- recipient
-- amount
-- network
-- policy reason
-- pending status
-
-To approve a pending transaction from the CLI:
-
-```bash
-npm run approve -- <tx-id>
-```
-
-Pending approvals are currently stored in a local file-backed queue and are intended for a later approval endpoint that can execute or reject them.
+Full end-to-end execution requires a local AgentPay runtime installed and configured on the machine.
 
 ## Repository Map
 
 | Path | Purpose |
 | --- | --- |
 | [`README.md`](README.md) | Public overview, architecture framing, and roadmap |
-| [`.env.example`](.env.example) | Local Slack webhook template for approval notifications |
-| [`TESTING.md`](TESTING.md) | Test commands, current coverage, and next testing targets |
 | [`analysis/worldliberty-agentpay-sdk-analysis.md`](analysis/worldliberty-agentpay-sdk-analysis.md) | Technical analysis of AgentPay and the proposed integration posture |
 | [`agentguard_with_copyright.png`](agentguard_with_copyright.png) | Project hero artwork |
 
@@ -557,15 +342,16 @@ Pending approvals are currently stored in a local file-backed queue and are inte
 
 ### Phase 1
 
-- real AgentPay runtime validation on a configured local install
-- broader policy surfaces beyond max-per-transaction and allowlists
-- tests for failure modes and CLI contract stability
-- more operator-friendly output around execution handoff
+- CLI preflight wrapper for transaction validation
+- basic thresholds and counterparty checks
+- local audit logging
+- AgentPay command delegation for approved actions
 
 ### Phase 2
 
+- configurable policy packs
 - approval routing for higher-risk actions
-- policy packs and reusable rule sets
+- richer transaction explanations and deny reasons
 - better operator visibility into agent behavior
 
 ### Phase 3
