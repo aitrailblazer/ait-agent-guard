@@ -1,6 +1,7 @@
 # Project-local ignore rules
 node_modules/
 logs/*.log
+.agentguard-state/
 .env
 .env.*
 !.env.example

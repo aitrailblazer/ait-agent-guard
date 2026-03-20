@@ -242,6 +242,8 @@ Then set:
 SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
 ```
 
+Pending approval state is stored locally in `.agentguard-state/pending-approvals.json`.
+
 Run an allowed transfer:
 
 ```bash
@@ -519,7 +521,13 @@ If `SLACK_WEBHOOK_URL` is configured, AgentGuard sends a Slack approval request 
 - policy reason
 - pending status
 
-Pending approvals are currently stored in memory and are intended for a later approval endpoint that can execute or reject them.
+To approve a pending transaction from the CLI:
+
+```bash
+npm run approve -- <tx-id>
+```
+
+Pending approvals are currently stored in a local file-backed queue and are intended for a later approval endpoint that can execute or reject them.
 
 ## Repository Map
 

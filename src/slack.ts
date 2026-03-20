@@ -53,6 +53,8 @@ export async function sendApprovalRequest(approval: PendingApproval): Promise<bo
             `*Network:* ${approval.network}`,
             `*Reason:* ${approval.reason}`,
             `*Status:* ${approval.status}`,
+            '',
+            `Run: \`npm run approve -- ${approval.txId}\``,
           ].join('\n'),
           type: 'mrkdwn',
         },

@@ -1,4 +1,7 @@
+import { rmSync } from 'node:fs';
 import { AddressInfo } from 'node:net';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -11,8 +14,14 @@ import {
 describe('AgentGuard HTTP API', () => {
   let baseUrl = '';
   let server: ReturnType<ReturnType<typeof createApp>['listen']>;
+  let stateDir: string;
 
   beforeEach(async () => {
+    stateDir = join(
+      tmpdir(),
+      `agentguard-server-test-${Math.random().toString(16).slice(2)}`,
+    );
+    process.env.AGENTGUARD_STATE_DIR = stateDir;
     process.env.SLACK_WEBHOOK_URL = '';
     clearPendingApprovals();
     server = createApp().listen(0);
@@ -37,6 +46,8 @@ describe('AgentGuard HTTP API', () => {
       });
     });
     clearPendingApprovals();
+    rmSync(stateDir, { force: true, recursive: true });
+    delete process.env.AGENTGUARD_STATE_DIR;
   });
 
   it('blocks a disallowed recipient on /validate', async () => {

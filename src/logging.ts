@@ -9,14 +9,15 @@ export type DecisionAction =
   | 'api-validate'
   | 'api-execute'
   | 'approval-request-api'
-  | 'approval-request-cli';
+  | 'approval-request-cli'
+  | 'approve-cli';
 
 export interface DecisionLogEntry {
   action: DecisionAction;
   amountWei: string;
   approvalTxId?: string;
   configuredExecutionMode: 'auto' | 'mock' | 'real';
-  decision: GuardDecision['status'] | 'PENDING_APPROVAL';
+  decision: GuardDecision['status'] | 'PENDING_APPROVAL' | 'APPROVED';
   reason?: string;
   recipient: string;
   timestamp: string;

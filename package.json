@@ -5,6 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "approve": "node --no-warnings --loader ts-node/esm src/approve.ts",
     "api": "node --no-warnings --loader ts-node/esm src/server.ts",
     "start": "node --no-warnings --loader ts-node/esm src/index.ts",
     "test": "vitest run",
