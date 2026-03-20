@@ -189,7 +189,10 @@ What exists today:
 - product framing and architecture
 - analysis of the AgentPay SDK and trust boundaries
 - a clear integration thesis for a pre-execution control layer
-- a runnable MVP CLI with mocked AgentPay execution
+- a runnable MVP CLI with config-driven policy evaluation
+- structured allow or deny decisions with explain mode
+- local decision logging in `logs/decisions.log`
+- mocked AgentPay execution with a real CLI handoff path prepared
 - an initial roadmap for the next iteration
 
 What does not exist yet:
@@ -209,6 +212,17 @@ Install dependencies:
 
 ```bash
 npm install
+```
+
+Review or update the local [`policy.json`](policy.json) file:
+
+```json
+{
+  "maxPerTxWei": "100000000000000",
+  "allowedRecipients": [
+    "0x1111111111111111111111111111111111111111"
+  ]
+}
 ```
 
 Run the MVP in mock mode:
@@ -235,8 +249,62 @@ npm run start -- 0x9999999999999999999999999999999999999999 100000000000000
 Expected result:
 
 ```text
-❌ BLOCKED: DENIED: recipient not allowed
+❌ BLOCKED: recipient not allowed
 ```
+
+Dry-run an allowed request without delegating execution:
+
+```bash
+npm run start -- --dry-run 0x1111111111111111111111111111111111111111 100000000000000
+```
+
+Expected result:
+
+```text
+✅ ALLOWED by AgentGuard
+🧪 Dry run: execution skipped.
+```
+
+Explain the policy outcome:
+
+```bash
+npm run start -- --explain 0x9999999999999999999999999999999999999999 100000000000000
+```
+
+Expected result:
+
+```text
+Policy evaluation:
+✔ Amount is positive: 100000000000000 wei is greater than zero
+✔ Recipient is a valid EVM address: 0x9999999999999999999999999999999999999999 matches the expected EVM address format
+✔ Amount is within maxPerTxWei: 100000000000000 wei is within the policy limit of 100000000000000 wei
+✖ Recipient is allowlisted: 0x9999999999999999999999999999999999999999 is not present in policy.allowedRecipients
+Decision: BLOCKED
+Reason: recipient not allowed
+```
+
+## Policy File
+
+AgentGuard loads runtime policy from [`policy.json`](policy.json).
+
+The current MVP supports:
+
+- `maxPerTxWei`
+- `allowedRecipients`
+
+That keeps the CLI small while making the decision layer config-driven instead of hardcoded.
+
+## Audit Log
+
+Every allow or block decision is appended to `logs/decisions.log` as one JSON record per line.
+
+That gives the prototype a local audit trail for:
+
+- decision status
+- recipient
+- amount
+- execution intent
+- deny reason when applicable
 
 ## Current Execution Mode
 
@@ -285,16 +353,15 @@ Full end-to-end execution requires a local AgentPay runtime installed and config
 
 ### Phase 1
 
-- CLI preflight wrapper for transaction validation
-- basic thresholds and counterparty checks
-- local audit logging
-- AgentPay command delegation for approved actions
+- real AgentPay runtime validation on a configured local install
+- broader policy surfaces beyond max-per-transaction and allowlists
+- tests for failure modes and CLI contract stability
+- more operator-friendly output around execution handoff
 
 ### Phase 2
 
-- configurable policy packs
 - approval routing for higher-risk actions
-- richer transaction explanations and deny reasons
+- policy packs and reusable rule sets
 - better operator visibility into agent behavior
 
 ### Phase 3
