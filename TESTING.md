@@ -30,6 +30,7 @@ The current automated suite lives in:
 
 - [`test/guard.test.ts`](test/guard.test.ts)
 - [`test/agentpay.test.ts`](test/agentpay.test.ts)
+- [`test/server.test.ts`](test/server.test.ts)
 
 It verifies:
 
@@ -39,8 +40,10 @@ It verifies:
 - AgentGuard falls back to mock mode when `agentpay` is unavailable
 - AgentGuard attempts the real CLI when `agentpay` is available
 - AgentGuard returns a structured failure when the real CLI exits with stderr
+- `/validate` blocks disallowed recipients over HTTP
+- `/validate-and-execute` runs through the fallback path over HTTP
 
-These tests exercise the structured decision surface in [`src/guard.ts`](src/guard.ts) and the execution-selection logic in [`src/agentpay.ts`](src/agentpay.ts).
+These tests exercise the structured decision surface in [`src/guard.ts`](src/guard.ts), the execution-selection logic in [`src/agentpay.ts`](src/agentpay.ts), and the HTTP service surface in [`src/server.ts`](src/server.ts).
 
 ## What Is Not Covered Yet
 

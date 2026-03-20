@@ -24,6 +24,7 @@
   <a href="#why-agentguard">Why AgentGuard</a> ·
   <a href="#how-it-works">How It Works</a> ·
   <a href="#current-status">Current Status</a> ·
+  <a href="#api-mode">API Mode</a> ·
   <a href="#testing">Testing</a> ·
   <a href="#roadmap">Roadmap</a> ·
   <a href="#security-notice">Security</a>
@@ -191,6 +192,7 @@ What exists today:
 - analysis of the AgentPay SDK and trust boundaries
 - a clear integration thesis for a pre-execution control layer
 - a runnable MVP CLI with config-driven policy evaluation
+- a minimal HTTP API for validation and execution
 - structured allow or deny decisions with explain mode
 - local decision logging in `logs/decisions.log`
 - automatic AgentPay detection with real execution or safe mock fallback
@@ -305,6 +307,89 @@ Decision: BLOCKED
 Reason: recipient not allowed
 ```
 
+## API Mode
+
+Start the API server:
+
+```bash
+npm run api
+```
+
+The server listens on `http://localhost:3000` by default and supports:
+
+- `POST /validate`
+- `POST /execute`
+- `POST /validate-and-execute`
+
+Validate a request without executing it:
+
+```bash
+curl -X POST http://localhost:3000/validate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "0x1111111111111111111111111111111111111111",
+    "amountWei": "100000000000000"
+  }'
+```
+
+Execute through the same policy gate:
+
+```bash
+curl -X POST http://localhost:3000/validate-and-execute \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "0x1111111111111111111111111111111111111111",
+    "amountWei": "100000000000000"
+  }'
+```
+
+Expected responses:
+
+- Allowed validation:
+
+```json
+{
+  "status": "ALLOWED",
+  "checks": [
+    {
+      "label": "Amount is positive",
+      "ok": true
+    },
+    {
+      "label": "Recipient is a valid EVM address",
+      "ok": true
+    },
+    {
+      "label": "Amount is within maxPerTxWei",
+      "ok": true
+    },
+    {
+      "label": "Recipient is allowlisted",
+      "ok": true
+    }
+  ]
+}
+```
+
+- Blocked execution:
+
+```json
+{
+  "status": "BLOCKED",
+  "reason": "recipient not allowed"
+}
+```
+
+- Mock fallback execution:
+
+```json
+{
+  "status": "EXECUTED",
+  "mode": "mock",
+  "result": "{\n  \"amountWei\": \"100000000000000\",\n  \"mode\": \"mock\",\n  \"network\": \"11155111\",\n  \"to\": \"0x1111111111111111111111111111111111111111\"\n}"
+}
+```
+
 ## Testing
 
 Testing is documented in more detail in [`TESTING.md`](TESTING.md).
@@ -328,11 +413,14 @@ Current automated coverage is intentionally narrow and centered on the core poli
 - block path for an amount above the configured limit
 - auto-fallback to mock mode when AgentPay is unavailable
 - real execution handoff when the AgentPay binary is present
+- HTTP validation blocks disallowed recipients
+- HTTP execution works through the fallback path
 
 The current automated test files are:
 
 - [`test/guard.test.ts`](test/guard.test.ts)
 - [`test/agentpay.test.ts`](test/agentpay.test.ts)
+- [`test/server.test.ts`](test/server.test.ts)
 
 Type-only verification remains available separately:
 

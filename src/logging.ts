@@ -2,7 +2,12 @@ import { appendFileSync, mkdirSync } from 'node:fs';
 
 import type { GuardDecision } from './guard.ts';
 
-export type DecisionAction = 'execute' | 'dry-run' | 'explain';
+export type DecisionAction =
+  | 'execute'
+  | 'dry-run'
+  | 'explain'
+  | 'api-validate'
+  | 'api-execute';
 
 export interface DecisionLogEntry {
   action: DecisionAction;

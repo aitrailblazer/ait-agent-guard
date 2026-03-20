@@ -1,13 +1,10 @@
 import { AGENTPAY_EXECUTION_MODE, executeAgentPayTransfer } from './agentpay.ts';
+import { type GuardDecision, type PolicyCheck } from './guard.ts';
+import { type DecisionAction } from './logging.ts';
 import {
-  evaluateTransaction,
-  loadPolicy,
-  type GuardDecision,
-  type PolicyCheck,
-} from './guard.ts';
-import { logDecision, type DecisionAction } from './logging.ts';
-
-const DEFAULT_NETWORK = '11155111';
+  DEFAULT_NETWORK,
+  evaluateAndLogTransactionRequest,
+} from './transaction.ts';
 
 interface CliOptions {
   amountArg?: string;
@@ -18,14 +15,6 @@ interface CliOptions {
 
 function usage(): void {
   console.log('Usage: npm run start -- [--dry-run] [--explain] <recipient> <amount-wei>');
-}
-
-function parseAmountWei(amountArg: string): bigint {
-  try {
-    return BigInt(amountArg);
-  } catch {
-    throw new Error('amount must be an integer wei value');
-  }
 }
 
 function parseArgs(argv: string[]): CliOptions {
@@ -109,19 +98,11 @@ function main(): void {
   }
 
   try {
-    const amountWei = parseAmountWei(options.amountArg);
-    const policy = loadPolicy();
-    const decision = evaluateTransaction(amountWei, options.recipient, policy);
-
-    logDecision({
-      action: resolveAction(options),
-      amountWei: amountWei.toString(),
-      configuredExecutionMode: AGENTPAY_EXECUTION_MODE,
-      decision: decision.status,
-      reason: decision.reason,
-      recipient: options.recipient,
-      timestamp: new Date().toISOString(),
-    });
+    const { amountWei, decision } = evaluateAndLogTransactionRequest(
+      options.recipient,
+      options.amountArg,
+      resolveAction(options),
+    );
 
     if (options.explain) {
       printEvaluation(decision);
