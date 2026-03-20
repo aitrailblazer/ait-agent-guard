@@ -1,213 +1,280 @@
-# AgentGuard
+<p align="center">
+  <img src="agentguard_with_copyright.png" alt="AgentGuard banner" width="1100" />
+</p>
 
-> Built on day one of the AgentPay SDK release.
->
-> This repository contains a minimal MVP demonstrating a pre-execution control layer for AgentPay.
+<h1 align="center">AgentGuard</h1>
 
-Control layer for AgentPay and USD1.
+<p align="center">
+  <strong>Pre-execution controls for AI-driven payments built on AgentPay.</strong>
+</p>
 
-AgentGuard is a pre-execution governance layer for AI-driven financial operations. It sits above AgentPay to evaluate whether a transaction should be attempted before that transaction reaches the signing boundary.
+<p align="center">
+  Built on day one of the AgentPay SDK release.
+</p>
+
+<p align="center">
+  <img alt="Status" src="https://img.shields.io/badge/status-early%20prototype-111827?style=flat-square" />
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-16a34a?style=flat-square" />
+  <img alt="Built on AgentPay" src="https://img.shields.io/badge/built%20on-AgentPay-2563eb?style=flat-square" />
+  <img alt="Focus" src="https://img.shields.io/badge/focus-USD1%20controls-7c3aed?style=flat-square" />
+  <img alt="Design" src="https://img.shields.io/badge/design-local--first-0f766e?style=flat-square" />
+</p>
+
+<p align="center">
+  <a href="#why-agentguard">Why AgentGuard</a> ·
+  <a href="#how-it-works">How It Works</a> ·
+  <a href="#current-status">Current Status</a> ·
+  <a href="#roadmap">Roadmap</a> ·
+  <a href="#security-notice">Security</a>
+</p>
 
 > AgentPay secures execution. AgentGuard governs intent.
 
-| Status | Early prototype |
-| --- | --- |
-| Focus | Safer AI-driven payments and approvals |
-| Built on | AgentPay |
-| License | MIT |
+AgentGuard is a pre-execution governance layer for AI-driven financial operations. It sits above AgentPay and answers the question that most payment systems leave unresolved:
 
-## Why It Exists
+**Should this transaction be attempted at all?**
 
-AI agents can move money faster than most systems can review intent.
+Before a payment reaches a signer, AgentGuard is designed to evaluate intent, policy, approval state, agent identity, and workflow context. The goal is simple: keep self-custodial execution intact while adding a serious control plane above it.
 
-The missing layer is not another wallet. The missing layer is a control plane that can:
+## Why AgentGuard
 
-- validate proposed transactions before execution
-- enforce system-level spending rules
-- support human review when needed
-- add visibility across multiple agents and workflows
+AI agents can move money faster than most teams can review intent.
 
-AgentGuard is designed to provide that layer while leaving custody, signing, and local policy enforcement to AgentPay.
+That changes the risk surface. The missing layer is not another wallet. The missing layer is a decision system that can:
 
-## AgentGuard and AgentPay
+- block unsafe transactions before they reach the signing boundary
+- enforce spending and workflow rules across multiple agents
+- request human review when thresholds or counterparties require it
+- create a durable audit trail for approvals, denials, and exceptions
 
-AgentPay is the execution runtime.
+AgentPay already provides a strong local execution boundary. AgentGuard is intended to complement that boundary, not replace it.
 
-AgentGuard is the decision and coordination layer above it.
+## What AgentGuard Is
+
+AgentGuard is:
+
+- a pre-execution control layer
+- a policy and workflow coordinator
+- an audit and visibility surface for agent-driven money movement
+- a way to separate intent review from transaction execution
+
+AgentGuard is not:
+
+- a wallet
+- a custody system
+- a signer
+- a replacement for AgentPay's local policy and signing model
+
+## Why This Architecture Matters
+
+Most agent payment systems collapse decision-making and execution into one layer.
+
+That is the wrong abstraction.
+
+The cleaner model is:
+
+1. AgentGuard decides whether an action should be attempted.
+2. AgentPay enforces local policy and signing at the execution boundary.
+3. The chain only sees transactions that survive both layers.
+
+That separation makes the system easier to reason about, easier to audit, and safer to operate.
+
+## AgentGuard vs AgentPay
 
 | Responsibility | AgentGuard | AgentPay |
 | --- | --- | --- |
 | Decide whether a transaction should be attempted | Yes | No |
-| Enforce system-level orchestration rules | Yes | Limited |
-| External approval and workflow coordination | Planned | Local-first manual approval |
-| Audit and visibility across agents | Yes | Partial |
-| Wallet custody | No | Yes |
-| Local signing | No | Yes |
-| Policy-aware transaction execution | No | Yes |
-
-## What Is AgentPay?
-
-AgentPay is a local, self-custodial runtime for executing blockchain transactions with built-in policy enforcement.
-
-It is developed by World Liberty Financial (WLFI) and released as an open-source SDK.
-
-Official site: [agentpay.worldlibertyfinancial.com](https://agentpay.worldlibertyfinancial.com/)
-
-At a high level, AgentPay consists of:
-
-- a CLI interface (`agentpay`) for initiating actions
-- a local daemon responsible for wallet access, approvals, and signing
-- a policy layer that enforces limits and approval rules before any transaction is signed
-
-### AgentPay Characteristics
-
-- Self-custodial: private keys remain on the local machine
-- Policy-aware: supports transaction and approval controls
-- Human-in-the-loop: supports manual approval workflows
-- Local-first: keeps the signing boundary on the operator's machine
-
-### AgentPay Execution Flow
-
-1. A transaction request is initiated through the CLI.
-2. The local runtime evaluates it against configured policies.
-3. If approved, the transaction is signed locally.
-4. The signed transaction is returned for broadcast.
-
-AgentPay solves secure execution.
-
-AgentGuard is intended to add a higher-level layer for deciding whether execution should happen in the first place.
+| Enforce cross-agent or system-level orchestration rules | Yes | Limited |
+| Route to human review when business policy requires it | Planned | Local-first manual approval |
+| Provide multi-workflow audit visibility | Yes | Partial |
+| Hold custody of keys | No | Yes |
+| Sign transactions locally | No | Yes |
+| Enforce local transaction policy before signing | No | Yes |
 
 ## Example Decision
 
-Requested action:
+| Input | Value |
+| --- | --- |
+| Requested action | Transfer `100 USD1` to recipient `X` |
+| Policy | Autonomous spend limit for this agent is `50 USD1` |
+| Result | Blocked before AgentPay execution |
 
-```text
-Transfer 100 USD1 to recipient X
-```
-
-System rule:
-
-```text
-Autonomous spend limit for this agent is 50 USD1
-```
-
-Outcome:
-
-```text
-Blocked before AgentPay execution
-```
-
-## Architecture
-
-```text
-AI Agent
-   |
-   v
-AgentGuard (validation + control)
-   |
-   v
-AgentPay CLI / daemon (policy + signing)
-   |
-   v
-Blockchain (USD1 transfer)
-```
-
-## Current Repository Status
-
-This repository is currently a public project-definition and architecture repo.
-
-What exists today:
-
-- product positioning and system framing
-- integration analysis of the AgentPay SDK
-- initial roadmap and scope definition
-
-What does not exist yet:
-
-- a runnable production implementation
-- a completed AgentPay integration
-- an audited release
-
-## Minimal Working Example (Day 1 MVP)
-
-AgentGuard runs as a simple CLI wrapper that validates a transaction before delegating to AgentPay.
-
-Example:
+Example CLI surface:
 
 ```bash
 agent-guard transfer --amount 100 --to 0x...
 ```
 
-Output:
+Expected outcome:
 
 ```text
-❌ Blocked — exceeds 50 USD1 limit
+DENIED
+reason: exceeds autonomous spend threshold
+action: require manual approval
 ```
 
-If allowed:
+If the request is allowed:
 
 ```bash
 agent-guard transfer --amount 10 --to 0x...
 ```
 
-Output:
-
 ```text
-✅ Allowed — executing via AgentPay...
+ALLOWED
+next: delegating execution to AgentPay
 ```
 
-Under the hood, AgentGuard evaluates rules first, then conditionally calls the `agentpay` CLI.
+## How It Works
 
-## Planned Initial Capabilities
+```text
+AI Agent / Workflow
+        |
+        v
+AgentGuard
+- validate intent
+- enforce orchestration rules
+- check thresholds and counterparties
+- request review if required
+        |
+        v
+AgentPay CLI / daemon
+- local policy enforcement
+- local signing boundary
+        |
+        v
+Blockchain / settlement rail
+```
 
-- minimal CLI wrapper MVP built on day one of AgentPay release
-- pre-execution transaction validation
-- per-transaction spending limits
-- higher-level policy checks above the execution runtime
-- local transaction logging and audit records
-- AgentPay CLI integration for real transaction flows
+Execution flow:
 
-## Repository Contents
+1. An agent or operator proposes an action.
+2. AgentGuard evaluates the request against higher-level rules.
+3. If denied, the action stops before execution.
+4. If allowed, AgentGuard delegates the transaction to AgentPay.
+5. AgentPay performs local policy checks and signing.
+6. The signed transaction is returned for broadcast.
 
-- [`README.md`](README.md): public overview and positioning
-- [`analysis/worldliberty-agentpay-sdk-analysis.md`](analysis/worldliberty-agentpay-sdk-analysis.md): technical analysis of the AgentPay SDK and integration strategy
+## Design Principles
 
-## Deep Dive: AgentPay Architecture
+- **Policy before signature.** Unsafe intent should be blocked before any signing path is reached.
+- **Self-custody preserved.** AgentGuard should not weaken AgentPay's local-first trust model.
+- **Human review stays available.** Automation should escalate, not silently override, when risk increases.
+- **Auditability matters.** Every allow, deny, and escalation should be explainable after the fact.
+- **Multi-agent safety matters.** Controls should work across workflows, not only inside one wallet runtime.
 
-The technical analysis covers:
+## What Is AgentPay?
 
-- CLI plus Rust daemon architecture
-- supported versus unsupported surfaces
-- security model and trust boundaries
-- integration strategy for AgentGuard
+AgentPay is a local, self-custodial runtime for blockchain transaction execution with built-in policy enforcement.
 
-Read the full analysis here:
+It is developed by World Liberty Financial (WLFI) and released as an open-source SDK. At a high level, AgentPay provides:
 
-- [`analysis/worldliberty-agentpay-sdk-analysis.md`](analysis/worldliberty-agentpay-sdk-analysis.md)
+- a CLI interface for initiating actions
+- a local daemon for wallet access, approvals, and signing
+- a policy-aware execution boundary before any signature is produced
+
+AgentPay official site:
+
+- [agentpay.worldlibertyfinancial.com](https://agentpay.worldlibertyfinancial.com/)
+
+For AgentGuard, the important takeaway is this:
+
+**AgentPay is the execution substrate. AgentGuard is the decision layer above it.**
+
+## Current Status
+
+This repository is intentionally honest about its maturity.
+
+What exists today:
+
+- product framing and architecture
+- analysis of the AgentPay SDK and trust boundaries
+- a clear integration thesis for a pre-execution control layer
+- an initial roadmap for MVP scope
+
+What does not exist yet:
+
+- a production-ready CLI wrapper
+- a completed AgentPay integration
+- audited release artifacts
+- a full policy engine implementation
+
+If you are here early, this is the right way to read the repo:
+
+**The concept is real. The architecture is serious. The implementation is still early.**
+
+## Repository Map
+
+| Path | Purpose |
+| --- | --- |
+| [`README.md`](README.md) | Public overview, architecture framing, and roadmap |
+| [`analysis/worldliberty-agentpay-sdk-analysis.md`](analysis/worldliberty-agentpay-sdk-analysis.md) | Technical analysis of AgentPay and the proposed integration posture |
+| [`agentguard_with_copyright.png`](agentguard_with_copyright.png) | Project hero artwork |
+
+## What To Read First
+
+1. Start with this README for the product thesis and system model.
+2. Read [`analysis/worldliberty-agentpay-sdk-analysis.md`](analysis/worldliberty-agentpay-sdk-analysis.md) for the architecture deep dive.
+3. Use the analysis to evaluate where AgentGuard should integrate and where it should not.
+
+## Early Use Cases
+
+- limit autonomous treasury actions by agent, workflow, or time window
+- require approval for large USD1 transfers before execution starts
+- block payments to unapproved counterparties
+- coordinate budgets across multiple agents using one policy plane
+- add audit visibility to agent-driven payment operations
+
+## Roadmap
+
+### Phase 1
+
+- CLI preflight wrapper for transaction validation
+- basic thresholds and counterparty checks
+- local audit logging
+- AgentPay command delegation for approved actions
+
+### Phase 2
+
+- configurable policy packs
+- approval routing for higher-risk actions
+- richer transaction explanations and deny reasons
+- better operator visibility into agent behavior
+
+### Phase 3
+
+- multi-agent budget coordination
+- policy orchestration across workflows
+- observability and audit dashboard
+- advanced control logic for production environments
+
+## Why This Project Could Matter
+
+If agent payments become common, the market will need more than wallets and signers.
+
+It will need:
+
+- systems that understand intent
+- controls that work before execution
+- trust boundaries that remain local and inspectable
+- operator tools that let humans keep authority without slowing everything to a halt
+
+That is the category AgentGuard is trying to define.
 
 ## Security Notice
 
-This project is about introducing additional control logic around financial transactions.
+This project is about adding control logic around financial transactions.
 
-- Review all code before use
-- Do not use with significant funds
-- Expect breaking changes during early development
-- Treat all examples as experimental until a real implementation is released
+- Review all code before use.
+- Do not use with significant funds.
+- Expect breaking changes during early development.
+- Treat all examples as experimental until a real implementation is released.
+- Do not assume this repository has been audited.
 
 ## Relationship to AgentPay
 
 AgentGuard is not affiliated with World Liberty Financial (WLFI).
 
-It is an independent open-source project intended to extend the AgentPay SDK with a separate control and coordination layer.
-
-## Roadmap
-
-- CLI wrapper (`agent-guard transfer`)
-- integration with AgentPay command flows
-- external approval workflows
-- multi-agent budget coordination
-- observability and audit dashboard
-- advanced policy engine
+It is an independent open-source project intended to extend AgentPay with a separate governance and coordination layer.
 
 ## About
 
@@ -217,4 +284,6 @@ AgentGuard is part of ongoing work around agent orchestration, real-world execut
 
 ## License
 
-MIT
+[MIT](LICENSE)
+
+© 2026 AITrailblazer
