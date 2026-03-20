@@ -1,0 +1,26 @@
+{
+  "name": "ait-agent-guard",
+  "version": "1.0.0",
+  "description": "Minimal TypeScript scaffold for AgentGuard, a pre-execution control layer built on AgentPay.",
+  "private": true,
+  "main": "index.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aitrailblazer/ait-agent-guard.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/aitrailblazer/ait-agent-guard/issues"
+  },
+  "homepage": "https://github.com/aitrailblazer/ait-agent-guard#readme",
+  "dependencies": {
+    "@types/node": "^25.5.0",
+    "execa": "^9.6.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
