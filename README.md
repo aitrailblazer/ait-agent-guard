@@ -1,5 +1,9 @@
 # AgentGuard
 
+> Built on day one of the AgentPay SDK release.
+>
+> This repository contains a minimal MVP demonstrating a pre-execution control layer for AgentPay.
+
 Control layer for AgentPay and USD1.
 
 AgentGuard is a pre-execution governance layer for AI-driven financial operations. It sits above AgentPay to evaluate whether a transaction should be attempted before that transaction reaches the signing boundary.
@@ -124,8 +128,39 @@ What does not exist yet:
 - a completed AgentPay integration
 - an audited release
 
+## Minimal Working Example (Day 1 MVP)
+
+AgentGuard runs as a simple CLI wrapper that validates a transaction before delegating to AgentPay.
+
+Example:
+
+```bash
+agent-guard transfer --amount 100 --to 0x...
+```
+
+Output:
+
+```text
+❌ Blocked — exceeds 50 USD1 limit
+```
+
+If allowed:
+
+```bash
+agent-guard transfer --amount 10 --to 0x...
+```
+
+Output:
+
+```text
+✅ Allowed — executing via AgentPay...
+```
+
+Under the hood, AgentGuard evaluates rules first, then conditionally calls the `agentpay` CLI.
+
 ## Planned Initial Capabilities
 
+- minimal CLI wrapper MVP built on day one of AgentPay release
 - pre-execution transaction validation
 - per-transaction spending limits
 - higher-level policy checks above the execution runtime
