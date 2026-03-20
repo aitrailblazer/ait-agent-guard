@@ -1,4 +1,8 @@
-import { AGENTPAY_EXECUTION_MODE, executeAgentPayTransfer } from './agentpay.ts';
+import { executeAgentPayTransfer } from './agentpay.ts';
+import {
+  createPendingApprovalRequest,
+  shouldRequestApproval,
+} from './approval.ts';
 import { type GuardDecision, type PolicyCheck } from './guard.ts';
 import { type DecisionAction } from './logging.ts';
 import {
@@ -78,7 +82,7 @@ function resolveAction(options: CliOptions): DecisionAction {
   return 'execute';
 }
 
-function main(): void {
+async function main(): Promise<void> {
   let options: CliOptions;
 
   try {
@@ -115,6 +119,26 @@ function main(): void {
     }
 
     if (decision.status === 'BLOCKED') {
+      if (shouldRequestApproval(decision) && !options.dryRun) {
+        const approval = await createPendingApprovalRequest({
+          amountWei: amountWei.toString(),
+          decision,
+          network: DEFAULT_NETWORK,
+          source: 'cli',
+          to: options.recipient,
+        });
+
+        console.log('⏳ PENDING APPROVAL');
+        console.log(`TxID: ${approval.txId}`);
+        if (!approval.notified) {
+          console.log('Slack notification was not delivered.');
+          if (approval.notificationError) {
+            console.log(`Reason: ${approval.notificationError}`);
+          }
+        }
+        return;
+      }
+
       console.error(`❌ BLOCKED: ${decision.reason}`);
       process.exitCode = 1;
       return;
@@ -149,4 +173,4 @@ function main(): void {
   }
 }
 
-main();
+void main();

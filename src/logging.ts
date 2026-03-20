@@ -7,13 +7,16 @@ export type DecisionAction =
   | 'dry-run'
   | 'explain'
   | 'api-validate'
-  | 'api-execute';
+  | 'api-execute'
+  | 'approval-request-api'
+  | 'approval-request-cli';
 
 export interface DecisionLogEntry {
   action: DecisionAction;
   amountWei: string;
+  approvalTxId?: string;
   configuredExecutionMode: 'auto' | 'mock' | 'real';
-  decision: GuardDecision['status'];
+  decision: GuardDecision['status'] | 'PENDING_APPROVAL';
   reason?: string;
   recipient: string;
   timestamp: string;

@@ -6,6 +6,10 @@ import express, {
 import { pathToFileURL } from 'node:url';
 
 import { executeAgentPayTransfer } from './agentpay.ts';
+import {
+  createPendingApprovalRequest,
+  shouldRequestApproval,
+} from './approval.ts';
 import { type GuardDecision } from './guard.ts';
 import {
   DEFAULT_NETWORK,
@@ -116,7 +120,7 @@ export function createApp(): express.Express {
     sendDecisionResponse(res, validationResult.decision);
   });
 
-  const executeHandler = (req: Request, res: Response): void => {
+  const executeHandler = async (req: Request, res: Response): Promise<void> => {
     const validationResult = handleValidation(req, res, 'api-execute');
 
     if ('statusCode' in validationResult) {
@@ -124,6 +128,25 @@ export function createApp(): express.Express {
     }
 
     if (validationResult.decision.status === 'BLOCKED') {
+      if (shouldRequestApproval(validationResult.decision)) {
+        const approval = await createPendingApprovalRequest({
+          amountWei: validationResult.amountWei.toString(),
+          decision: validationResult.decision,
+          network: validationResult.network,
+          source: 'api',
+          to: validationResult.to,
+        });
+
+        res.status(202).json({
+          notified: approval.notified,
+          notificationError: approval.notificationError,
+          reason: approval.reason,
+          status: 'PENDING_APPROVAL',
+          txId: approval.txId,
+        });
+        return;
+      }
+
       sendDecisionResponse(res, validationResult.decision);
       return;
     }

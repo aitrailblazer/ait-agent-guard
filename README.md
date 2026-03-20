@@ -196,6 +196,8 @@ What exists today:
 - structured allow or deny decisions with explain mode
 - local decision logging in `logs/decisions.log`
 - automatic AgentPay detection with real execution or safe mock fallback
+- Slack approval requests for approval-eligible blocks
+- an in-memory pending approval store for follow-up actions
 - an initial roadmap for the next iteration
 
 What does not exist yet:
@@ -226,6 +228,18 @@ Review or update the local [`policy.json`](policy.json) file:
     "0x1111111111111111111111111111111111111111"
   ]
 }
+```
+
+Optional: configure Slack approval routing in a local `.env` file:
+
+```bash
+cp .env.example .env
+```
+
+Then set:
+
+```bash
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
 ```
 
 Run an allowed transfer:
@@ -273,7 +287,8 @@ npm run start -- 0x9999999999999999999999999999999999999999 100000000000000
 Expected result:
 
 ```text
-❌ BLOCKED: recipient not allowed
+⏳ PENDING APPROVAL
+TxID: <generated-uuid>
 ```
 
 Dry-run an allowed request without delegating execution:
@@ -371,12 +386,23 @@ Expected responses:
 }
 ```
 
-- Blocked execution:
+- Blocked validation:
 
 ```json
 {
   "status": "BLOCKED",
   "reason": "recipient not allowed"
+}
+```
+
+- Approval-required execution:
+
+```json
+{
+  "status": "PENDING_APPROVAL",
+  "reason": "recipient not allowed",
+  "txId": "<generated-uuid>",
+  "notified": false
 }
 ```
 
@@ -415,6 +441,7 @@ Current automated coverage is intentionally narrow and centered on the core poli
 - real execution handoff when the AgentPay binary is present
 - HTTP validation blocks disallowed recipients
 - HTTP execution works through the fallback path
+- HTTP execution creates a pending approval for approval-eligible blocks
 
 The current automated test files are:
 
@@ -474,11 +501,32 @@ To enable real execution locally:
 
 If AgentPay is installed but misconfigured, execution can still fail after a transaction is allowed by policy.
 
+## Slack Approvals
+
+AgentGuard can escalate approval-eligible policy blocks into pending human review instead of stopping at a hard deny.
+
+The current approval-eligible reasons are:
+
+- `amount exceeds limit`
+- `recipient not allowed`
+
+If `SLACK_WEBHOOK_URL` is configured, AgentGuard sends a Slack approval request that includes:
+
+- transaction ID
+- recipient
+- amount
+- network
+- policy reason
+- pending status
+
+Pending approvals are currently stored in memory and are intended for a later approval endpoint that can execute or reject them.
+
 ## Repository Map
 
 | Path | Purpose |
 | --- | --- |
 | [`README.md`](README.md) | Public overview, architecture framing, and roadmap |
+| [`.env.example`](.env.example) | Local Slack webhook template for approval notifications |
 | [`TESTING.md`](TESTING.md) | Test commands, current coverage, and next testing targets |
 | [`analysis/worldliberty-agentpay-sdk-analysis.md`](analysis/worldliberty-agentpay-sdk-analysis.md) | Technical analysis of AgentPay and the proposed integration posture |
 | [`agentguard_with_copyright.png`](agentguard_with_copyright.png) | Project hero artwork |
