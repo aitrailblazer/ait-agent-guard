@@ -6,7 +6,6 @@
   "type": "module",
   "scripts": {
     "start": "node --no-warnings --loader ts-node/esm src/index.ts",
-    "start:real": "AGENTGUARD_USE_MOCK=false node --no-warnings --loader ts-node/esm src/index.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
@@ -24,7 +23,6 @@
   "homepage": "https://github.com/aitrailblazer/ait-agent-guard#readme",
   "dependencies": {
     "@types/node": "^25.5.0",
-    "execa": "^9.6.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },

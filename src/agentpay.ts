@@ -1,43 +1,73 @@
-import { execa } from 'execa';
+import { execSync } from 'node:child_process';
 
-export const AGENTPAY_EXECUTION_MODE =
-  process.env.AGENTGUARD_USE_MOCK === 'false' ? 'real' : 'mock';
+export const AGENTPAY_EXECUTION_MODE = 'real' as const;
 
-export async function sendWithAgentPay(
+export type AgentPayTransferResult =
+  | {
+      raw: string;
+      success: true;
+    }
+  | {
+      error: string;
+      success: false;
+    };
+
+function shellEscape(value: string): string {
+  return `'${value.replace(/'/g, `'\"'\"'`)}'`;
+}
+
+function readExecutionError(error: unknown): string {
+  if (typeof error === 'object' && error !== null && 'stderr' in error) {
+    const stderr = (error as { stderr?: Buffer | string }).stderr;
+
+    if (typeof stderr === 'string' && stderr.trim() !== '') {
+      return stderr.trim();
+    }
+
+    if (Buffer.isBuffer(stderr)) {
+      const message = stderr.toString('utf8').trim();
+      if (message !== '') {
+        return message;
+      }
+    }
+  }
+
+  return error instanceof Error ? error.message : 'AgentPay execution failed';
+}
+
+export function executeAgentPayTransfer(
   to: string,
   amountWei: string,
   network: string,
-): Promise<string> {
-  if (AGENTPAY_EXECUTION_MODE === 'mock') {
-    console.log('[AgentPay MOCK]');
-    console.log({
-      to,
-      amount: amountWei,
-      network,
-    });
-
-    return 'mock-tx-hash-0x123';
-  }
+): AgentPayTransferResult {
+  const commandParts = [
+    'agentpay',
+    'transfer-native',
+    '--network',
+    network,
+    '--to',
+    to,
+    '--amount-wei',
+    amountWei,
+  ];
+  const command = commandParts.map(shellEscape).join(' ');
 
   try {
-    const { stdout } = await execa('agentpay', [
-      'transfer-native',
-      '--network',
-      network,
-      '--to',
-      to,
-      '--amount-wei',
-      amountWei,
-    ]);
+    console.log(`⚡ Running: ${command}`);
 
-    return stdout;
+    const output = execSync(command, {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    return {
+      raw: output.trim(),
+      success: true,
+    };
   } catch (error) {
-    if ((error as NodeJS.ErrnoException | undefined)?.code === 'ENOENT') {
-      throw new Error(
-        'AgentPay is not installed locally. Install it and rerun with AGENTGUARD_USE_MOCK=false.',
-      );
-    }
-
-    throw error;
+    return {
+      error: readExecutionError(error),
+      success: false,
+    };
   }
 }

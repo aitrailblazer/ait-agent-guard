@@ -1,4 +1,4 @@
-import { AGENTPAY_EXECUTION_MODE, sendWithAgentPay } from './agentpay.ts';
+import { AGENTPAY_EXECUTION_MODE, executeAgentPayTransfer } from './agentpay.ts';
 import {
   evaluateTransaction,
   loadPolicy,
@@ -89,7 +89,7 @@ function resolveAction(options: CliOptions): DecisionAction {
   return 'execute';
 }
 
-async function main(): Promise<void> {
+function main(): void {
   let options: CliOptions;
 
   try {
@@ -142,18 +142,25 @@ async function main(): Promise<void> {
     console.log('✅ ALLOWED by AgentGuard');
 
     if (options.dryRun) {
-      console.log('🧪 Dry run: execution skipped.');
+      console.log('🧪 DRY RUN: skipping AgentPay execution');
       return;
     }
 
-    const result = await sendWithAgentPay(
+    const result = executeAgentPayTransfer(
       options.recipient,
       amountWei.toString(),
       DEFAULT_NETWORK,
     );
 
+    if (!result.success) {
+      console.error('❌ AgentPay execution failed:');
+      console.error(result.error);
+      process.exitCode = 1;
+      return;
+    }
+
     console.log('🚀 Executed via AgentPay:');
-    console.log(result);
+    console.log(result.raw);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`❌ ERROR: ${message}`);
@@ -161,4 +168,4 @@ async function main(): Promise<void> {
   }
 }
 
-void main();
+main();

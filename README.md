@@ -193,13 +193,13 @@ What exists today:
 - a runnable MVP CLI with config-driven policy evaluation
 - structured allow or deny decisions with explain mode
 - local decision logging in `logs/decisions.log`
-- mocked AgentPay execution with a real CLI handoff path prepared
+- direct AgentPay CLI execution for approved transfers
 - an initial roadmap for the next iteration
 
 What does not exist yet:
 
 - a production-ready policy engine
-- a completed live AgentPay integration
+- a verified local AgentPay runtime on every development machine
 - audited release artifacts
 - a full approval and orchestration layer
 
@@ -226,19 +226,31 @@ Review or update the local [`policy.json`](policy.json) file:
 }
 ```
 
-Run the MVP in mock mode:
+Verify that AgentPay is installed locally:
+
+```bash
+agentpay --help
+```
+
+If you have not initialized it yet, complete local setup:
+
+```bash
+agentpay admin setup
+```
+
+Run an allowed transfer:
 
 ```bash
 npm run start -- 0x1111111111111111111111111111111111111111 100000000000000
 ```
 
-Expected flow:
+Expected flow on a configured machine:
 
 ```text
 ✅ ALLOWED by AgentGuard
-[AgentPay MOCK]
+⚡ Running: 'agentpay' 'transfer-native' '--network' '11155111' '--to' '0x1111111111111111111111111111111111111111' '--amount-wei' '100000000000000'
 🚀 Executed via AgentPay:
-mock-tx-hash-0x123
+<AgentPay CLI output>
 ```
 
 Blocked example:
@@ -263,7 +275,7 @@ Expected result:
 
 ```text
 ✅ ALLOWED by AgentGuard
-🧪 Dry run: execution skipped.
+🧪 DRY RUN: skipping AgentPay execution
 ```
 
 Explain the policy outcome:
@@ -344,26 +356,23 @@ That gives the prototype a local audit trail for:
 - execution intent
 - deny reason when applicable
 
-## Current Execution Mode
+## Real Execution
 
-AgentGuard currently runs with a mocked AgentPay execution layer for development.
+AgentGuard now calls the local AgentPay CLI directly for approved transfers.
 
-That means the control loop is real:
+Requirements:
 
-- input
-- validation
-- allow or deny decision
-- execution handoff
+- AgentPay installed locally
+- wallet configured through `agentpay admin setup`
+- a network and policy configuration that matches your intended environment
 
-But the final transaction call is still simulated by default.
-
-To switch to the real AgentPay path later:
+Example:
 
 ```bash
-AGENTGUARD_USE_MOCK=false npm run start -- 0x1111111111111111111111111111111111111111 100000000000000
+npm run start -- 0x1111111111111111111111111111111111111111 100000000000000
 ```
 
-Full end-to-end execution requires a local AgentPay runtime installed and configured on the machine.
+If AgentPay is missing or not configured correctly, AgentGuard will fail at the execution boundary after a transaction is allowed by policy.
 
 ## Repository Map
 
