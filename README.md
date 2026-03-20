@@ -24,6 +24,8 @@ AgentPay is a local, self-custodial runtime for executing blockchain transaction
 
 It is developed by World Liberty Financial (WLFI) and released as an open-source SDK.
 
+Official site: [agentpay.worldlibertyfinancial.com](https://agentpay.worldlibertyfinancial.com/)
+
 At a high level, AgentPay consists of:
 
 - A CLI interface (`agentpay`) for initiating actions
